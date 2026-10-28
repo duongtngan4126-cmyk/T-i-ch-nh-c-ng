@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz Quản lý tài chính công</title>
+<style>
+:root{--c1:#ff7a1a;--c2:#ff3d8b;--c3:#12a8e8;--ink:#1f2a44}
+body[data-t="pink"]{--c1:#ff3d8b;--c2:#ff7a1a;--c3:#12a8e8}
+body[data-t="blue"]{--c1:#12a8e8;--c2:#ff3d8b;--c3:#ff7a1a}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:"Nunito","Segoe UI",system-ui,sans-serif;color:var(--ink);
+background:linear-gradient(120deg,#fff1e6,#ffe3f0,#dff4ff,#fff1e6);background-size:300% 300%;animation:flow 12s ease infinite}
+@keyframes flow{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 20px;background:#ffffffee;backdrop-filter:blur(8px);box-shadow:0 2px 14px #0001;flex-wrap:wrap}
+header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:linear-gradient(90deg,#ff7a1a,#ff3d8b,#12a8e8,#ff7a1a);background-size:300% 100%;animation:run 4s linear infinite}
+@keyframes run{to{background-position:300% 0}}
+header h1{margin:0;font-size:1.3rem;font-weight:900;background:linear-gradient(90deg,#ff7a1a,#ff3d8b,#12a8e8,#ff7a1a);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:run 5s linear infinite}
+.stats{display:flex;gap:8px;font-weight:800}
+.stats span{background:#fff;border:2px solid #ffd9bf;border-radius:999px;padding:5px 14px}
+.prog{height:6px;background:#0001}.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff7a1a,#ff3d8b,#12a8e8);transition:width .4s}
+main{max-width:1060px;margin:18px auto;padding:0 12px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.bar button,.bar select{border:2px solid #fff;background:#fff;color:var(--ink);border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px #0001;transition:.2s;font-family:inherit}
+.bar button:hover{transform:translateY(-2px)}
+.bar button.on{background:linear-gradient(90deg,var(--c1),var(--c2));color:#fff}
+.wrap{display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start}
+@media(max-width:820px){.wrap{grid-template-columns:1fr}}
+.card,.side{background:#fff;border-radius:16px;padding:22px;box-shadow:0 6px 24px #0001;border-top:5px solid var(--c1);transition:border-color .6s}
+.side h3{margin:0 0 12px;font-size:1rem}
+.pal{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:420px;overflow:auto}
+.pal button{aspect-ratio:1;border:2px solid #d9dfec;background:#fff;border-radius:10px;font-weight:800;cursor:pointer;font-family:inherit}
+.pal button.done{background:#22b573;border-color:#22b573;color:#fff}
+.pal button.cur{border-color:var(--c2);box-shadow:0 0 0 3px #ff3d8b33}
+.meta{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:.85rem}
+.tag{background:linear-gradient(90deg,var(--c1),var(--c2));color:#fff;padding:4px 12px;border-radius:999px}
+h2{font-size:1.2rem;line-height:1.55;margin:16px 0}
+.opt{display:flex;align-items:center;gap:14px;width:100%;text-align:left;margin:10px 0;padding:12px 16px;border:2px solid #dfe5f2;border-radius:12px;background:#fff;font-size:1rem;cursor:pointer;transition:.2s;font-family:inherit;color:var(--ink)}
+.opt b{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#eef2fb;font-weight:900}
+.opt:hover:not(:disabled){border-color:var(--c1);background:#fff8f2;transform:translateX(4px)}
+.opt.bad{border-color:#ef4444;background:#fff0f0;animation:sh .35s}.opt.bad b{background:#ef4444;color:#fff}
+.opt.good{border-color:#22b573;background:#e9fbf2;font-weight:800}.opt.good b{background:#22b573;color:#fff}
+@keyframes sh{25%{margin-left:-8px}75%{margin-left:8px}}
+.exp{display:none;margin-top:14px;padding:14px;border-radius:12px;background:#eefaff;border-left:5px solid var(--c3)}
+.nav{display:flex;justify-content:space-between;margin-top:18px}
+.nav button{background:linear-gradient(90deg,var(--c1),var(--c2));color:#fff;border:0;border-radius:10px;padding:11px 24px;font-weight:800;cursor:pointer;font-family:inherit}
+.nav button:disabled{opacity:.35}
+canvas{position:fixed;inset:0;pointer-events:none;z-index:9}
+</style>
+</head>
+<body data-t="orange">
+<canvas id="fx"></canvas>
+<header><h1>📘 Quản lý Tài chính công</h1><div class="stats"><span id="sc">⭐ 0</span><span id="st">🔥 0</span></div></header><div class="prog"><i id="pg"></i></div>
+<main>
+<div class="bar" id="bar"></div>
+<div class="wrap"><div class="card" id="card"></div><aside class="side"><h3>📋 Danh sách câu hỏi</h3><div class="pal" id="pal"></div></aside></div>
+</main>
+<script>
+/* ===== DỮ LIỆU: c=chương(1-6), t=loại (lt/tt/tn/vd), a=4 đáp án, k=đáp án đúng (0-3) ===== */
+const TYPES={lt:"Lý thuyết",tt:"Thực tiễn",tn:"Thực tế",vd:"Vận dụng"};
+const Q=[];const add=(c,t,q,a,k,e)=>Q.push({c,t,q,a,k,e});
+// Chương 1
+add(1,"lt","Bộ phận nào được xem là cốt lõi của tài chính công?",["Quỹ bảo hiểm xã hội","Ngân sách nhà nước","Tài chính doanh nghiệp tư nhân","Tín dụng ngân hàng thương mại"],1,"NSNN là bộ phận chủ yếu, giữ vai trò chủ đạo trong hệ thống tài chính công.");
+add(1,"lt","Các chức năng của tài chính công gồm:",["Phân bổ nguồn lực; tái phân phối thu nhập; điều chỉnh và kiểm soát","Chỉ phân bổ nguồn lực","Kinh doanh sinh lời và tích lũy vốn","Phát hành tiền và điều hành lãi suất"],0,"Theo giáo trình: phân bổ nguồn lực, tái phân phối thu nhập, điều chỉnh và kiểm soát.");
+add(1,"tt","Chủ thể sở hữu và quyết định sử dụng tài chính công là:",["Doanh nghiệp tư nhân","Hộ gia đình","Nhà nước","Tổ chức quốc tế"],2,"Tính chủ thể: tài chính công gắn với quyền lực và lợi ích công của Nhà nước.");
+add(1,"tn","Khi thu thuế của người có thu nhập cao để chi trợ cấp cho hộ nghèo, Nhà nước đang thực hiện chức năng nào?",["Phân bổ nguồn lực","Tái phân phối thu nhập","Kiểm soát giá","Tạo nguồn vốn kinh doanh"],1,"Đây là tái phân phối thu nhập nhằm thu hẹp bất bình đẳng.");
+add(1,"vd","Luật Ngân sách nhà nước số 89/2025/QH15 có hiệu lực thi hành từ thời điểm nào (trừ một số quy định)?",["Năm ngân sách 2026","Năm ngân sách 2015","Ngày 01/01/2020","Năm ngân sách 2030"],0,"Luật NSNN 2025 (89/2025/QH15) có hiệu lực từ năm ngân sách 2026, thay Luật NSNN 2015.");
+// Chương 2
+add(2,"lt","Đặc điểm nào KHÔNG phải của thuế?",["Tính bắt buộc","Tính không hoàn trả trực tiếp","Tính pháp lý","Tính đối giá trực tiếp với dịch vụ cụ thể"],3,"Tính đối giá là đặc trưng của phí, không phải của thuế.");
+add(2,"lt","Thuế giá trị gia tăng thuộc loại:",["Thuế trực thu","Thuế gián thu","Thuế tài sản","Thuế xuất khẩu"],1,"Người nộp thuế chuyển gánh nặng sang người tiêu dùng nên là thuế gián thu.");
+add(2,"tt","Lệ phí khác phí ở điểm nào?",["Lệ phí thu khi cơ quan nhà nước phục vụ công việc quản lý nhà nước","Lệ phí do tư nhân thu","Lệ phí không bắt buộc","Lệ phí luôn bằng 0"],0,"Lệ phí gắn với công việc quản lý nhà nước (vd: lệ phí trước bạ, cấp giấy phép).");
+add(2,"tn","Thuế thu nhập doanh nghiệp phổ thông hiện hành là:",["10%","15%","20%","25%"],2,"Thuế suất TNDN phổ thông là 20% theo pháp luật hiện hành (kiểm tra văn bản mới nhất khi ôn thi).");
+add(2,"vd","Hàng hóa xuất khẩu được áp dụng thuế suất GTGT nào?",["0%","5%","8%","10%"],0,"Hàng hóa, dịch vụ xuất khẩu áp dụng thuế suất 0%.");
+// Chương 3
+add(3,"lt","Chi thường xuyên của NSNN nhằm mục đích chủ yếu:",["Tạo tài sản cố định mới có quy mô lớn","Duy trì hoạt động thường xuyên của bộ máy và thực hiện các nhiệm vụ nhà nước","Bù đắp bội chi","Trả nợ gốc"],1,"Chi thường xuyên đảm bảo hoạt động thường xuyên, có tính ổn định.");
+add(3,"lt","Chi thường xuyên thường có tác dụng:",["Dài hạn, tạo năng lực sản xuất mới","Chủ yếu ngắn hạn, gắn với năm ngân sách","Không ảnh hưởng đến kinh tế","Chỉ thực hiện ở địa phương"],1,"Chi thường xuyên thường mang tính ổn định, tác dụng ngắn hạn.");
+add(3,"tt","Nguyên tắc quan trọng khi thực hiện chi NSNN:",["Chỉ chi khi có dự toán được cấp có thẩm quyền giao (trừ tạm cấp ngân sách)","Chi tùy theo đề nghị của đơn vị","Chi trước, hợp thức sau","Chi không cần định mức"],0,"Luật NSNN 2025: chi chỉ khi có dự toán giao, đúng chế độ, tiêu chuẩn, định mức.");
+add(3,"tn","Cơ quan nào kiểm soát chi thường xuyên NSNN tại các đơn vị sử dụng ngân sách?",["Kho bạc Nhà nước","Ngân hàng thương mại","Sở Du lịch","Tòa án"],0,"Kho bạc Nhà nước kiểm soát, thanh toán các khoản chi NSNN.");
+add(3,"vd","Đơn vị chưa được giao dự toán nhưng muốn chi một khoản thường xuyên. Việc nào đúng?",["Chi ngay rồi báo cáo sau","Chờ dự toán được giao (hoặc thuộc diện tạm cấp theo luật) mới chi","Mượn quỹ khác để chi","Tự nâng định mức"],1,"Chi chỉ được thực hiện khi có dự toán giao, trừ tạm cấp ngân sách.");
+// Chương 4
+add(4,"lt","Đặc điểm của chi đầu tư phát triển:",["Ngắn hạn, lặp lại hằng ngày","Tạo cơ sở vật chất, tăng tài sản, tác dụng dài hạn","Chỉ trả lương","Chỉ chi cho quốc phòng"],1,"Chi đầu tư phát triển làm tăng cơ sở vật chất – kỹ thuật, tác dụng lâu dài.");
+add(4,"lt","Vòng đời một dự án đầu tư xây dựng gồm các giai đoạn:",["Chuẩn bị đầu tư – thực hiện đầu tư – kết thúc xây dựng, đưa vào khai thác","Chỉ thi công","Chỉ lập dự toán","Chỉ quyết toán"],0,"Ba giai đoạn cơ bản theo giáo trình.");
+add(4,"tt","Vì sao chi đầu tư phải kiểm soát chặt khâu chuẩn bị đầu tư?",["Vì quyết định ở khâu này ảnh hưởng đến hiệu quả cả dự án","Vì khâu này không tốn kém","Vì không cần phê duyệt","Vì chỉ làm cho đẹp hồ sơ"],0,"Sai sót ở khâu chuẩn bị gây lãng phí, kéo dài, vượt tổng mức.");
+add(4,"tn","Vốn đầu tư công sử dụng nguồn nào?",["Chủ yếu vốn từ ngân sách nhà nước và vốn có nguồn gốc nhà nước theo luật","Vốn tư nhân thuần túy","Tiền cá nhân","Tiền điện tử"],0,"Đầu tư công dùng vốn NSNN và nguồn vốn nhà nước theo Luật Đầu tư công.");
+add(4,"vd","Dự án đã hoàn thành, công việc cuối cùng về vốn là:",["Quyết toán vốn đầu tư dự án hoàn thành","Xin thêm vốn mới","Hủy hồ sơ","Giảm định mức"],0,"Sau nghiệm thu, đưa vào sử dụng phải quyết toán vốn đầu tư.");
+// Chương 5
+add(5,"lt","Bội chi NSNN là:",["Tổng chi lớn hơn tổng thu trong năm ngân sách","Tổng thu lớn hơn tổng chi","Thu bằng chi","Chỉ là chi thường xuyên tăng"],0,"Bội chi xảy ra khi chi vượt thu; phải vay bù đắp.");
+add(5,"lt","Bù đắp bội chi NSNN chủ yếu bằng:",["In thêm tiền không giới hạn","Vay trong nước và vay nước ngoài","Tăng chi thường xuyên","Bán hết tài sản công"],1,"Vay (trái phiếu, vay ODA…) là nguồn chính bù đắp bội chi.");
+add(5,"tt","Nguyên tắc sử dụng vốn vay bù đắp bội chi:",["Chỉ dùng cho đầu tư phát triển, không dùng cho chi thường xuyên","Dùng để chi lương","Dùng để chi mua sắm tùy ý","Không cần ràng buộc"],0,"Luật NSNN quy định vay bù đắp bội chi chỉ dùng cho đầu tư phát triển.");
+add(5,"tn","Vì sao cần cân đối thu – chi NSNN?",["Để bảo đảm an ninh tài chính, ổn định vĩ mô","Để tăng nợ vô hạn","Để tăng lạm phát","Để giảm đầu tư"],0,"Cân đối giúp quản lý bội chi, nợ công trong giới hạn an toàn.");
+add(5,"vd","Năm N: thu NSNN 100 nghìn tỷ, chi 120 nghìn tỷ, GDP 1.000 nghìn tỷ. Bội chi so GDP là:",["1%","2%","10%","20%"],1,"Bội chi = 120 − 100 = 20; 20/1.000 = 2%.");
+// Chương 6
+add(6,"lt","Quỹ tài chính công ngoài NSNN có đặc điểm:",["Nằm ngoài NSNN, hình thành từ nguồn riêng, không vì mục tiêu lợi nhuận","Là tài sản riêng cá nhân","Là quỹ kinh doanh","Do nước ngoài quản lý"],0,"Quỹ ngoài NSNN do Nhà nước lập/quản lý để thực hiện mục tiêu công cụ thể.");
+add(6,"lt","Ví dụ quỹ tài chính công ngoài NSNN:",["Quỹ bảo hiểm xã hội","Quỹ tiết kiệm cá nhân","Quỹ cổ đông công ty tư","Quỹ gia đình"],0,"Quỹ BHXH, BHYT… là các quỹ tài chính công ngoài NSNN.");
+add(6,"tt","Theo Luật NSNN 2025, NSNN đối với kinh phí hoạt động của quỹ tài chính nhà nước ngoài ngân sách:",["Không hỗ trợ kinh phí hoạt động","Luôn cấp toàn bộ","Cấp theo yêu cầu","Cấp gấp đôi"],0,"Nguyên tắc: NSNN không hỗ trợ kinh phí hoạt động cho các quỹ ngoài ngân sách.");
+add(6,"tn","Vì sao cần quản lý chặt các quỹ ngoài NSNN?",["Để tránh thất thoát, sử dụng đúng mục tiêu, minh bạch","Để dễ chia cho cá nhân","Để giảm hiệu quả","Để quỹ không phải công khai"],0,"Quỹ dùng tiền công nên cần minh bạch, đúng mục đích.");
+add(6,"vd","Một quỹ ngoài NSNN dùng tiền để mua sắm ngoài mục tiêu thành lập. Đánh giá đúng là:",["Vi phạm nguyên tắc sử dụng đúng mục đích, phải xử lý theo quy định","Hợp lệ","Được phép nếu lãnh đạo đồng ý miệng","Chỉ cần ghi sổ"],0,"Sử dụng sai mục đích vi phạm quy chế quản lý quỹ.");
+
+/* ===== LOGIC ===== */
+const themes=["orange","pink","blue"];let ti=0,list=[],i=0,ch=0,ty="all",solved=new Set,cyc=true;
+const $=s=>document.querySelector(s),card=$("#card"),bar=$("#bar");
+function theme(n){ti=n??(ti+1)%3;document.body.dataset.t=themes[ti]}
+function build(){
+ bar.innerHTML="";
+ const sel=document.createElement("select");sel.innerHTML='<option value="0">Tất cả chương</option>'+[1,2,3,4,5,6].map(n=>`<option value="${n}">Chương ${n}</option>`).join("");
+ sel.value=ch;sel.onchange=()=>{ch=+sel.value;load()};bar.append(sel);
+ [["all","Tất cả"],...Object.entries(TYPES)].forEach(([k,v])=>{const b=document.createElement("button");b.textContent=v;b.className=ty==k?"on":"";b.onclick=()=>{ty=k;load();build()};bar.append(b)});
+ const t=document.createElement("button");t.textContent="🎨 Đổi màu";t.onclick=()=>theme();bar.append(t);
+ const c=document.createElement("button");c.textContent=cyc?"Tự đổi màu: Bật":"Tự đổi màu: Tắt";c.onclick=()=>{cyc=!cyc;build()};bar.append(c);
+}
+function load(){list=Q.filter(q=>(!ch||q.c==ch)&&(ty=="all"||q.t==ty));i=0;render()}
+let score=0,streak=0,tried=new Set;
+function hud(){const p=$("#pal");p.innerHTML=list.map((x,n)=>`<button class="${solved.has(x.q)?"done":""} ${n==i?"cur":""}" data-n="${n}">${n+1}</button>`).join("");p.onclick=e=>{const n=e.target.dataset.n;if(n!==undefined){i=+n;render()}};$("#sc").textContent="⭐ "+score;$("#st").textContent="🔥 "+streak;$("#pg").style.width=(list.length?solved.size/Q.length*100:0)+"%"}
+function render(){
+ if(!list.length){card.innerHTML="<h2>Chưa có câu hỏi cho lựa chọn này.</h2>";return}
+ const q=list[i];
+ card.innerHTML=`<div class="meta"><span class="tag">Chương ${q.c} · ${TYPES[q.t]}</span><span>Câu ${i+1}/${list.length}</span></div><h2>${q.q}</h2><div class="grid">`+
+ q.a.map((x,n)=>`<button class="opt" data-n="${n}"><b>${"ABCD"[n]}</b><span>${x}</span></button>`).join("")+
+ `</div><div class="exp" id="exp"><b>✅ Đáp án đúng: ${"ABCD"[q.k]}.</b> ${q.e}</div><div class="nav"><button id="pv" ${i==0?"disabled":""}>← Trước</button><button id="nx" ${i==list.length-1?"disabled":""}>Sau →</button></div>`;
+ card.querySelectorAll(".opt").forEach(b=>b.onclick=()=>pick(b,q));
+ $("#pv").onclick=()=>{i--;if(cyc)theme();render()};$("#nx").onclick=()=>{i++;if(cyc)theme();render()};hud();
+}
+function pick(b,q){
+ if(+b.dataset.n===q.k){b.classList.add("good");card.querySelectorAll(".opt").forEach(o=>o.disabled=true);$("#exp").style.display="block";
+  if(!solved.has(q.q)){score+=tried.has(q.q)?50:100;streak++}solved.add(q.q);hud();boom(b)}
+ else{b.classList.add("bad");b.disabled=true;tried.add(q.q);streak=0;hud()}
+}
+/* ===== PHÁO HOA: nổ tức thì trong FW_MS = 30ms (0,03s); hạt sáng thêm ~0,8s để nhìn thấy ===== */
+const FW_MS=30,cv=$("#fx"),g=cv.getContext("2d");let P=[],run=false;
+function size(){cv.width=innerWidth;cv.height=innerHeight}size();addEventListener("resize",size);
+function boom(el){
+ const r=el.getBoundingClientRect(),cols=["#ff7a1a","#ff3d8b","#12a8e8","#fff"];
+ const bursts=3;for(let b=0;b<bursts;b++){const x=r.left+Math.random()*r.width,y=r.top+Math.random()*r.height,col=cols[b%3];
+  setTimeout(()=>{for(let n=0;n<60;n++){const a=Math.random()*6.283,s=2+Math.random()*5;P.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,l:1,c:Math.random()<.2?"#fff":col})}if(!run){run=true;loop()}},b*FW_MS/bursts)}
+}
+function loop(){g.clearRect(0,0,cv.width,cv.height);P=P.filter(p=>p.l>0);P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.12;p.l-=.02;g.globalAlpha=Math.max(p.l,0);g.fillStyle=p.c;g.beginPath();g.arc(p.x,p.y,2.5,0,6.283);g.fill()});
+ if(P.length)requestAnimationFrame(loop);else{run=false;g.clearRect(0,0,cv.width,cv.height)}}
+build();load();
+</script>
+</body>
+</html>
